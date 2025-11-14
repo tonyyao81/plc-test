@@ -48,11 +48,7 @@ public class ModbusSimulatorServer {
             return;
         }
 
-        ModbusTcpSlaveConfig config = new ModbusTcpSlaveConfig.Builder()
-                .setBindAddress("0.0.0.0")
-                .setPort(port)
-                .build();
-
+        ModbusTcpSlaveConfig config = new ModbusTcpSlaveConfig.Builder().build();
         slave = new ModbusTcpSlave(config);
 
         // 设置请求处理器
@@ -264,7 +260,8 @@ public class ModbusSimulatorServer {
             }
         });
 
-        slave.bind("0.0.0.0", port);
+        // 绑定到指定端口
+        slave.bind(port).await();
         running.set(true);
         log.info("Modbus 模拟服务器 {} 已启动，监听端口: {}, 单元ID: {}", name, port, unitId);
     }
