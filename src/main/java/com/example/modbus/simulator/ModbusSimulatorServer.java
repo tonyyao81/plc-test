@@ -220,7 +220,7 @@ public class ModbusSimulatorServer {
         });
 
         // 绑定到指定端口
-        slave.bind("0.0.0.0", port).await();
+        slave.bind("0.0.0.0", port).get();
         running.set(true);
         log.info("Modbus 模拟服务器 {} 已启动，监听端口: {}, 单元ID: {}", name, port, unitId);
     }
