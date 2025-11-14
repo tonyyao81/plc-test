@@ -59,12 +59,6 @@ public class ModbusSimulatorServer {
                 int address = request.getAddress();
                 int quantity = request.getQuantity();
 
-                // 检查请求的单元ID是否匹配
-                if (request.getUnitId() != unitId) {
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
-                    return;
-                }
-
                 try {
                     ByteBuf registers = Unpooled.buffer(quantity * 2);
                     for (int i = 0; i < quantity; i++) {
@@ -84,11 +78,6 @@ public class ModbusSimulatorServer {
                 int address = request.getAddress();
                 int quantity = request.getQuantity();
 
-                if (request.getUnitId() != unitId) {
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
-                    return;
-                }
-
                 try {
                     ByteBuf registers = Unpooled.buffer(quantity * 2);
                     for (int i = 0; i < quantity; i++) {
@@ -107,11 +96,6 @@ public class ModbusSimulatorServer {
                 ReadCoilsRequest request = service.getRequest();
                 int address = request.getAddress();
                 int quantity = request.getQuantity();
-
-                if (request.getUnitId() != unitId) {
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
-                    return;
-                }
 
                 try {
                     ByteBuf coilStatus = Unpooled.buffer((quantity + 7) / 8);
@@ -139,11 +123,6 @@ public class ModbusSimulatorServer {
                 int address = request.getAddress();
                 int quantity = request.getQuantity();
 
-                if (request.getUnitId() != unitId) {
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
-                    return;
-                }
-
                 try {
                     ByteBuf inputStatus = Unpooled.buffer((quantity + 7) / 8);
                     int byteCount = (quantity + 7) / 8;
@@ -170,11 +149,6 @@ public class ModbusSimulatorServer {
                 int address = request.getAddress();
                 boolean value = request.getValue() != 0;
 
-                if (request.getUnitId() != unitId) {
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
-                    return;
-                }
-
                 try {
                     coils[address] = value;
                     service.sendResponse(new WriteSingleCoilResponse(address, value ? 0xFF00 : 0x0000));
@@ -191,11 +165,6 @@ public class ModbusSimulatorServer {
                 int address = request.getAddress();
                 int value = request.getValue();
 
-                if (request.getUnitId() != unitId) {
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
-                    return;
-                }
-
                 try {
                     holdingRegisters[address] = (short) value;
                     service.sendResponse(new WriteSingleRegisterResponse(address, value));
@@ -211,11 +180,6 @@ public class ModbusSimulatorServer {
                 WriteMultipleCoilsRequest request = service.getRequest();
                 int address = request.getAddress();
                 int quantity = request.getQuantity();
-
-                if (request.getUnitId() != unitId) {
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
-                    return;
-                }
 
                 try {
                     ByteBuf values = request.getValues();
@@ -239,11 +203,6 @@ public class ModbusSimulatorServer {
                 WriteMultipleRegistersRequest request = service.getRequest();
                 int address = request.getAddress();
                 int quantity = request.getQuantity();
-
-                if (request.getUnitId() != unitId) {
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
-                    return;
-                }
 
                 try {
                     ByteBuf values = request.getValues();
