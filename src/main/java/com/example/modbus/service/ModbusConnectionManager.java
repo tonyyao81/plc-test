@@ -83,7 +83,7 @@ public class ModbusConnectionManager {
             String connectionString = config.getConnectionString();
             log.info("正在连接到设备 {}: {}", deviceName, connectionString);
 
-            connection = driverManager.getConnection(connectionString);
+            connection = driverManager.getConnectionManager().getConnection(connectionString);
 
             if (!connection.isConnected()) {
                 throw new RuntimeException("无法连接到设备: " + deviceName);
