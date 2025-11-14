@@ -1,20 +1,35 @@
 # Modbus 设备监控系统
 
-基于 Spring Boot 3 和 Apache PLC4X 实现的 Modbus 设备监控和控制系统。
+基于 Spring Boot 3 和 Apache PLC4X 实现的 Modbus 设备监控和控制系统，支持 Modbus 和 S7 协议模拟器。
 
 ## 功能特性
 
+### 核心功能
 - 监控设备 A 的标志位状态
 - 检测状态变化（从 0 到 1）
 - 自动触发设备 B 的标志位设置
 - 自动重连机制
 - 可配置的轮询间隔
 
+### 模拟器功能
+- **Modbus TCP 模拟服务器**：完整的 Modbus TCP 从站实现
+  - 支持线圈（Coils）、离散输入（Discrete Inputs）
+  - 支持保持寄存器（Holding Registers）、输入寄存器（Input Registers）
+  - 支持读/写功能码
+  - 可配置多个模拟设备
+
+- **S7 协议模拟服务器**：S7 通信模拟
+  - 支持基本的 S7 连接和数据交换
+  - 支持数据块（DB）、标志位（Merker）
+  - 适用于测试和开发
+
 ## 技术栈
 
 - Java 21
 - Spring Boot 3.2.0
-- Apache PLC4X 0.12.0
+- Apache PLC4X 0.12.0（支持 Modbus 和 S7）
+- Digitalpetri Modbus 1.2.0（Modbus 服务器）
+- Netty 4.1.100（网络通信）
 - Maven
 - Lombok
 
@@ -64,6 +79,88 @@ modbus:
 - `coil:0` - 线圈地址 0
 - `holding-register:100` - 保持寄存器地址 100
 
+## 模拟器配置
+
+系统内置了 Modbus 和 S7 协议模拟服务器，方便在没有真实设备的情况下进行测试和开发。
+
+### 启用模拟器
+
+在 `application.yml` 中配置：
+
+```yaml
+simulator:
+  # 是否启用模拟器
+  enabled: true
+
+  # Modbus 模拟服务器列表
+  modbus-servers:
+    - name: "设备A模拟器"
+      port: 5020
+      unit-id: 1
+      enabled: true
+
+    - name: "设备B模拟器"
+      port: 5021
+      unit-id: 1
+      enabled: true
+
+  # S7 模拟服务器列表
+  s7-servers:
+    - name: "S7设备模拟器"
+      port: 1102
+      rack: 0
+      slot: 0
+      enabled: true
+```
+
+### 使用模拟器进行测试
+
+1. **启用模拟器**：设置 `simulator.enabled: true`
+
+2. **配置客户端连接到模拟器**：
+```yaml
+modbus:
+  device-a:
+    host: localhost  # 或 127.0.0.1
+    port: 5020       # 模拟器端口
+    unit-id: 1
+    flag-address: "coil:0"
+
+  device-b:
+    host: localhost
+    port: 5021
+    unit-id: 1
+    flag-address: "coil:0"
+```
+
+3. **启动应用**：模拟器会自动启动并监听配置的端口
+
+4. **验证模拟器运行**：查看日志输出
+```
+===== 启动模拟器服务 =====
+✓ Modbus 服务器 '设备A模拟器' 启动成功
+✓ Modbus 服务器 '设备B模拟器' 启动成功
+✓ S7 服务器 'S7设备模拟器' 启动成功
+===== 模拟器服务启动完成 =====
+```
+
+### 模拟器支持的功能
+
+**Modbus 模拟器**：
+- 读线圈（Function Code 0x01）
+- 读离散输入（Function Code 0x02）
+- 读保持寄存器（Function Code 0x03）
+- 读输入寄存器（Function Code 0x04）
+- 写单个线圈（Function Code 0x05）
+- 写单个寄存器（Function Code 0x06）
+- 写多个线圈（Function Code 0x0F）
+- 写多个寄存器（Function Code 0x10）
+
+**S7 模拟器**：
+- 基本的 COTP 连接建立
+- 数据读写模拟
+- 支持数据块和标志位
+
 ## 构建和运行
 
 ### 构建项目
@@ -98,11 +195,16 @@ java -jar target/modbus-monitor-1.0.0.jar
 src/main/java/com/example/modbus/
 ├── ModbusMonitorApplication.java      # 主应用类
 ├── config/
-│   └── ModbusProperties.java          # 配置属性类
-└── service/
-    ├── ModbusConnectionManager.java   # 连接管理器
-    ├── DeviceService.java             # 设备读写服务
-    └── MonitorService.java            # 监控服务
+│   ├── ModbusProperties.java          # Modbus 配置属性类
+│   └── SimulatorProperties.java       # 模拟器配置属性类
+├── service/
+│   ├── ModbusConnectionManager.java   # 连接管理器
+│   ├── DeviceService.java             # 设备读写服务
+│   └── MonitorService.java            # 监控服务
+└── simulator/
+    ├── ModbusSimulatorServer.java     # Modbus 模拟服务器
+    ├── S7SimulatorServer.java         # S7 模拟服务器
+    └── SimulatorManager.java          # 模拟器管理器
 ```
 
 ## 日志说明

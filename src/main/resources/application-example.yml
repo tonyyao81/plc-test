@@ -39,6 +39,49 @@ modbus:
     # 请求超时（毫秒）
     request-timeout-ms: 3000
 
+# 模拟器配置（用于测试）
+simulator:
+  # 是否启用模拟器
+  # true = 启动内置的模拟服务器，用于测试
+  # false = 禁用模拟器，连接真实设备
+  enabled: false
+
+  # Modbus TCP 模拟服务器列表
+  modbus-servers:
+    # 模拟设备 A
+    - name: "设备A模拟器"
+      port: 5020          # 监听端口（避免与真实设备冲突）
+      unit-id: 1          # Modbus 单元 ID
+      enabled: true       # 是否启用此模拟器
+
+    # 模拟设备 B
+    - name: "设备B模拟器"
+      port: 5021
+      unit-id: 1
+      enabled: true
+
+  # S7 协议模拟服务器列表
+  s7-servers:
+    - name: "S7设备模拟器"
+      port: 1102          # S7 监听端口（标准端口 102，这里使用 1102 避免权限问题）
+      rack: 0             # PLC Rack 号
+      slot: 0             # PLC Slot 号
+      enabled: true
+
+# 使用模拟器时的配置示例：
+# modbus:
+#   device-a:
+#     host: localhost   # 连接到本地模拟器
+#     port: 5020        # 使用模拟器端口
+#     unit-id: 1
+#     flag-address: "coil:0"
+#
+#   device-b:
+#     host: localhost
+#     port: 5021
+#     unit-id: 1
+#     flag-address: "coil:0"
+
 # 日志配置
 logging:
   level:

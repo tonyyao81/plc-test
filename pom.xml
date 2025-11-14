@@ -54,6 +54,32 @@
             <version>${plc4x.version}</version>
         </dependency>
 
+        <!-- Apache PLC4X S7 Driver -->
+        <dependency>
+            <groupId>org.apache.plc4x</groupId>
+            <artifactId>plc4j-driver-s7</artifactId>
+            <version>${plc4x.version}</version>
+        </dependency>
+
+        <!-- Digitalpetri Modbus - for Modbus server simulation -->
+        <dependency>
+            <groupId>com.digitalpetri.modbus</groupId>
+            <artifactId>modbus-master-tcp</artifactId>
+            <version>1.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.digitalpetri.modbus</groupId>
+            <artifactId>modbus-slave-tcp</artifactId>
+            <version>1.2.0</version>
+        </dependency>
+
+        <!-- Netty for networking (required by modbus server) -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.100.Final</version>
+        </dependency>
+
         <!-- Lombok for reducing boilerplate -->
         <dependency>
             <groupId>org.projectlombok</groupId>

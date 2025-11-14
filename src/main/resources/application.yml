@@ -5,16 +5,16 @@ spring:
 modbus:
   # 设备 A 配置（被监控设备）
   device-a:
-    host: 192.168.1.100
-    port: 502
+    host: localhost  # 使用本地模拟器
+    port: 5020       # 模拟器端口
     unit-id: 1
     # 标志位地址（Coil 或 Holding Register）
     flag-address: "coil:0"  # 例如：coil:0 表示线圈0，或 holding-register:0 表示保持寄存器0
 
   # 设备 B 配置（被控制设备）
   device-b:
-    host: 192.168.1.101
-    port: 502
+    host: localhost  # 使用本地模拟器
+    port: 5021       # 模拟器端口
     unit-id: 1
     flag-address: "coil:0"
 
@@ -24,7 +24,34 @@ modbus:
     connection-timeout-ms: 5000  # 连接超时
     request-timeout-ms: 3000  # 请求超时
 
+# 模拟器配置
+simulator:
+  # 是否启用模拟器（true=启用，false=禁用）
+  enabled: true
+
+  # Modbus 模拟服务器列表
+  modbus-servers:
+    - name: "设备A模拟器"
+      port: 5020  # 使用不同端口避免冲突
+      unit-id: 1
+      enabled: true
+
+    - name: "设备B模拟器"
+      port: 5021
+      unit-id: 1
+      enabled: true
+
+  # S7 模拟服务器列表
+  s7-servers:
+    - name: "S7设备模拟器"
+      port: 1102  # 使用不同端口避免冲突
+      rack: 0
+      slot: 0
+      enabled: true
+
 logging:
   level:
     com.example.modbus: DEBUG
     org.apache.plc4x: INFO
+    com.digitalpetri.modbus: INFO
+    io.netty: INFO
