@@ -1,0 +1,50 @@
+# 配置示例文件
+# 复制此文件为 application.yml 并根据实际设备配置修改
+
+spring:
+  application:
+    name: modbus-monitor
+
+modbus:
+  # 设备 A 配置（被监控设备）
+  device-a:
+    # 设备 A 的 IP 地址
+    host: 192.168.1.100
+    # Modbus TCP 端口（默认 502）
+    port: 502
+    # Modbus 单元 ID（从站地址，默认 1）
+    unit-id: 1
+    # 标志位地址
+    # 格式：coil:地址 或 holding-register:地址
+    # 示例：
+    #   coil:0 - 线圈地址 0
+    #   coil:100 - 线圈地址 100
+    #   holding-register:0 - 保持寄存器地址 0
+    #   holding-register:1000 - 保持寄存器地址 1000
+    flag-address: "coil:0"
+
+  # 设备 B 配置（被控制设备）
+  device-b:
+    host: 192.168.1.101
+    port: 502
+    unit-id: 1
+    flag-address: "coil:0"
+
+  # 监控配置
+  monitor:
+    # 轮询间隔（毫秒）- 建议值 500-5000
+    poll-interval-ms: 1000
+    # 连接超时（毫秒）
+    connection-timeout-ms: 5000
+    # 请求超时（毫秒）
+    request-timeout-ms: 3000
+
+# 日志配置
+logging:
+  level:
+    # 应用日志级别：TRACE, DEBUG, INFO, WARN, ERROR
+    com.example.modbus: INFO
+    # PLC4X 库日志级别
+    org.apache.plc4x: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

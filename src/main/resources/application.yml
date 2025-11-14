@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: modbus-monitor
+
+modbus:
+  # 设备 A 配置（被监控设备）
+  device-a:
+    host: 192.168.1.100
+    port: 502
+    unit-id: 1
+    # 标志位地址（Coil 或 Holding Register）
+    flag-address: "coil:0"  # 例如：coil:0 表示线圈0，或 holding-register:0 表示保持寄存器0
+
+  # 设备 B 配置（被控制设备）
+  device-b:
+    host: 192.168.1.101
+    port: 502
+    unit-id: 1
+    flag-address: "coil:0"
+
+  # 监控配置
+  monitor:
+    poll-interval-ms: 1000  # 轮询间隔（毫秒）
+    connection-timeout-ms: 5000  # 连接超时
+    request-timeout-ms: 3000  # 请求超时
+
+logging:
+  level:
+    com.example.modbus: DEBUG
+    org.apache.plc4x: INFO
