@@ -1,6 +1,6 @@
 package com.example.modbus.simulator;
 
-import com.digitalpetri.modbus.codec.Modbus;
+import com.digitalpetri.modbus.ExceptionCode;
 import com.digitalpetri.modbus.requests.*;
 import com.digitalpetri.modbus.responses.*;
 import com.digitalpetri.modbus.slave.ModbusTcpSlave;
@@ -68,7 +68,7 @@ public class ModbusSimulatorServer {
                     log.debug("{} - 读取保持寄存器: 地址={}, 数量={}", name, address, quantity);
                 } catch (Exception e) {
                     log.error("{} - 读取保持寄存器失败", name, e);
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
+                    service.sendException(ExceptionCode.IllegalDataAddress);
                 }
             }
 
@@ -87,7 +87,7 @@ public class ModbusSimulatorServer {
                     log.debug("{} - 读取输入寄存器: 地址={}, 数量={}", name, address, quantity);
                 } catch (Exception e) {
                     log.error("{} - 读取输入寄存器失败", name, e);
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
+                    service.sendException(ExceptionCode.IllegalDataAddress);
                 }
             }
 
@@ -113,7 +113,7 @@ public class ModbusSimulatorServer {
                     log.debug("{} - 读取线圈: 地址={}, 数量={}", name, address, quantity);
                 } catch (Exception e) {
                     log.error("{} - 读取线圈失败", name, e);
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
+                    service.sendException(ExceptionCode.IllegalDataAddress);
                 }
             }
 
@@ -139,7 +139,7 @@ public class ModbusSimulatorServer {
                     log.debug("{} - 读取离散输入: 地址={}, 数量={}", name, address, quantity);
                 } catch (Exception e) {
                     log.error("{} - 读取离散输入失败", name, e);
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
+                    service.sendException(ExceptionCode.IllegalDataAddress);
                 }
             }
 
@@ -155,7 +155,7 @@ public class ModbusSimulatorServer {
                     log.info("{} - 写入单个线圈: 地址={}, 值={}", name, address, value);
                 } catch (Exception e) {
                     log.error("{} - 写入单个线圈失败", name, e);
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
+                    service.sendException(ExceptionCode.IllegalDataAddress);
                 }
             }
 
@@ -171,7 +171,7 @@ public class ModbusSimulatorServer {
                     log.info("{} - 写入单个寄存器: 地址={}, 值={}", name, address, value);
                 } catch (Exception e) {
                     log.error("{} - 写入单个寄存器失败", name, e);
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
+                    service.sendException(ExceptionCode.IllegalDataAddress);
                 }
             }
 
@@ -194,7 +194,7 @@ public class ModbusSimulatorServer {
                     log.info("{} - 写入多个线圈: 地址={}, 数量={}", name, address, quantity);
                 } catch (Exception e) {
                     log.error("{} - 写入多个线圈失败", name, e);
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
+                    service.sendException(ExceptionCode.IllegalDataAddress);
                 }
             }
 
@@ -214,7 +214,7 @@ public class ModbusSimulatorServer {
                     log.info("{} - 写入多个寄存器: 地址={}, 数量={}", name, address, quantity);
                 } catch (Exception e) {
                     log.error("{} - 写入多个寄存器失败", name, e);
-                    service.sendException(Modbus.ExceptionCode.IllegalDataAddress);
+                    service.sendException(ExceptionCode.IllegalDataAddress);
                 }
             }
         });
