@@ -24,6 +24,7 @@ public class ModbusConnectionManager {
 
     private final ModbusProperties modbusProperties;
     private final Map<String, PlcConnection> connections = new ConcurrentHashMap<>();
+    private final Map<String, String> deviceNameToEndpoint = new ConcurrentHashMap<>(); // 设备名到endpoint的映射
     private PlcDriverManager driverManager;
 
     @PostConstruct
@@ -41,21 +42,37 @@ public class ModbusConnectionManager {
      * 获取或创建设备A的连接
      */
     public PlcConnection getDeviceAConnection() throws Exception {
-        return getOrCreateConnection("deviceA", modbusProperties.getDeviceA());
+        // 使用 endpoint 作为连接键，实现连接复用
+        String endpoint = getEndpoint(modbusProperties.getDeviceA());
+        deviceNameToEndpoint.put("deviceA", endpoint);
+        return getOrCreateConnection(endpoint, modbusProperties.getDeviceA());
     }
 
     /**
      * 获取或创建设备B的连接
      */
     public PlcConnection getDeviceBConnection() throws Exception {
-        return getOrCreateConnection("deviceB", modbusProperties.getDeviceB());
+        // 使用 endpoint 作为连接键，实现连接复用
+        String endpoint = getEndpoint(modbusProperties.getDeviceB());
+        deviceNameToEndpoint.put("deviceB", endpoint);
+        return getOrCreateConnection(endpoint, modbusProperties.getDeviceB());
+    }
+
+    /**
+     * 获取设备的 endpoint 标识（host:port:unit-id）
+     * 用于判断两个设备是否指向同一个物理连接
+     */
+    private String getEndpoint(ModbusProperties.DeviceConfig config) {
+        return String.format("%s:%d:%d", config.getHost(), config.getPort(), config.getUnitId());
     }
 
     /**
      * 获取或创建连接
+     * @param endpoint 连接端点标识 (host:port:unit-id)
+     * @param config 设备配置
      */
-    private PlcConnection getOrCreateConnection(String deviceName, ModbusProperties.DeviceConfig config) throws Exception {
-        PlcConnection connection = connections.get(deviceName);
+    private PlcConnection getOrCreateConnection(String endpoint, ModbusProperties.DeviceConfig config) throws Exception {
+        PlcConnection connection = connections.get(endpoint);
 
         // 检查连接是否存在且有效
         if (connection != null) {
@@ -69,13 +86,13 @@ public class ModbusConnectionManager {
                 }
             } catch (Exception e) {
                 // 连接已失效（例如线程池已终止），需要移除并重建
-                log.warn("检测到设备 {} 的连接已失效: {}", deviceName, e.getMessage());
-                connections.remove(deviceName);
+                log.warn("检测到 {} 的连接已失效: {}", endpoint, e.getMessage());
+                connections.remove(endpoint);
                 // 尝试关闭失效的连接
                 try {
                     connection.close();
                 } catch (Exception closeEx) {
-                    log.debug("关闭失效连接时出错: {}", deviceName, closeEx);
+                    log.debug("关闭失效连接时出错: {}", endpoint, closeEx);
                 }
                 connection = null;
             }
@@ -84,7 +101,7 @@ public class ModbusConnectionManager {
         // 创建新连接
         synchronized (this) {
             // 双重检查
-            connection = connections.get(deviceName);
+            connection = connections.get(endpoint);
             if (connection != null) {
                 try {
                     if (connection.isConnected()) {
@@ -92,8 +109,8 @@ public class ModbusConnectionManager {
                         return connection;
                     }
                 } catch (Exception e) {
-                    log.debug("双重检查时发现连接失效: {}", deviceName);
-                    connections.remove(deviceName);
+                    log.debug("双重检查时发现连接失效: {}", endpoint);
+                    connections.remove(endpoint);
                     connection = null;
                 }
             }
@@ -103,13 +120,13 @@ public class ModbusConnectionManager {
                 try {
                     connection.close();
                 } catch (Exception e) {
-                    log.warn("关闭旧连接时出错: {}", deviceName, e);
+                    log.warn("关闭旧连接时出错: {}", endpoint, e);
                 }
             }
 
             // 创建新连接
             String connectionString = config.getConnectionString();
-            log.info("正在连接到设备 {}: {}", deviceName, connectionString);
+            log.info("正在连接到 {}: {}", endpoint, connectionString);
 
             try {
                 connection = driverManager.getConnectionManager().getConnection(connectionString);
@@ -121,15 +138,15 @@ public class ModbusConnectionManager {
                 // 验证连接真正可用
                 connection.getMetadata();
 
-                connections.put(deviceName, connection);
-                log.info("成功连接到设备 {}", deviceName);
+                connections.put(endpoint, connection);
+                log.info("成功连接到 {} (此连接可能被多个设备复用)", endpoint);
 
                 return connection;
             } catch (Exception e) {
-                log.error("创建到设备 {} 的连接失败: {}", deviceName, e.getMessage());
+                log.error("创建到 {} 的连接失败: {}", endpoint, e.getMessage());
                 // 确保失败的连接不会被缓存
-                connections.remove(deviceName);
-                throw new RuntimeException("无法连接到设备: " + deviceName + " - " + e.getMessage(), e);
+                connections.remove(endpoint);
+                throw new RuntimeException("无法连接到: " + endpoint + " - " + e.getMessage(), e);
             }
         }
     }
@@ -138,14 +155,20 @@ public class ModbusConnectionManager {
      * 重新连接指定设备
      */
     public void reconnect(String deviceName) {
-        PlcConnection connection = connections.remove(deviceName);
-        if (connection != null) {
-            try {
-                connection.close();
-                log.info("已关闭设备 {} 的连接，准备重新连接", deviceName);
-            } catch (Exception e) {
-                log.warn("关闭连接时出错: {}", deviceName, e);
+        // 通过设备名找到对应的 endpoint
+        String endpoint = deviceNameToEndpoint.get(deviceName);
+        if (endpoint != null) {
+            PlcConnection connection = connections.remove(endpoint);
+            if (connection != null) {
+                try {
+                    connection.close();
+                    log.info("已关闭 {} ({}) 的连接，准备重新连接", deviceName, endpoint);
+                } catch (Exception e) {
+                    log.warn("关闭连接时出错: {} ({})", deviceName, endpoint, e);
+                }
             }
+        } else {
+            log.debug("设备 {} 没有活跃的连接", deviceName);
         }
     }
 

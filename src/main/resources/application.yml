@@ -53,5 +53,7 @@ logging:
   level:
     com.example.modbus: DEBUG
     org.apache.plc4x: INFO
+    org.apache.plc4x.java.spi.connection.DefaultNettyPlcConnection: WARN  # 降低 Connection reset 日志级别
+    org.apache.plc4x.java.spi.connection.NettyChannelFactory: WARN  # 降低通道关闭日志级别
     com.digitalpetri.modbus: INFO
     io.netty: INFO
