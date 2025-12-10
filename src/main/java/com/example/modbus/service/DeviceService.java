@@ -110,14 +110,14 @@ public class DeviceService {
         String address = parts[1].trim();
 
         // 构建PLC4X Modbus地址
-        // 格式：modbus:unit-id:type:address
-        // 例如：coil:1:0 表示单元ID 1的线圈0
-        //      holding-register:1:100 表示单元ID 1的保持寄存器100
+        // PLC4X 格式：type:address:unitId
+        // 例如：coil:0:1 表示单元ID 1的线圈0
+        //      input-register:100:1 表示单元ID 1的输入寄存器100
         return switch (type.toLowerCase()) {
-            case "coil" -> String.format("%s:%d", address, unitId);
-            case "discrete-input" -> String.format("%s:%d", address, unitId);
-            case "input-register" -> String.format("%s:%d", address, unitId);
-            case "holding-register" -> String.format("%s:%d", address, unitId);
+            case "coil" -> String.format("coil:%s:%d", address, unitId);
+            case "discrete-input" -> String.format("discrete-input:%s:%d", address, unitId);
+            case "input-register" -> String.format("input-register:%s:%d", address, unitId);
+            case "holding-register" -> String.format("holding-register:%s:%d", address, unitId);
             default -> throw new IllegalArgumentException("不支持的地址类型: " + type);
         };
     }
