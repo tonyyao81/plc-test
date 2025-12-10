@@ -27,34 +27,119 @@ public class DeviceService {
      * 读取设备A的标志位
      */
     public boolean readDeviceAFlag() {
-        try {
-            PlcConnection connection = connectionManager.getDeviceAConnection();
-            String address = buildAddress(modbusProperties.getDeviceA());
-            String addressType = getAddressType(modbusProperties.getDeviceA().getFlagAddress());
-            return readFlagValue(connection, address, addressType, "设备A");
-        } catch (Exception e) {
-            log.error("读取设备A标志位失败", e);
-            // 尝试重新连接
-            connectionManager.reconnect("deviceA");
-            return false;
+        return readDeviceFlagWithRetry("deviceA", modbusProperties.getDeviceA(),
+                                       () -> connectionManager.getDeviceAConnection());
+    }
+
+    /**
+     * 读取设备标志位，支持失败重试
+     */
+    private boolean readDeviceFlagWithRetry(String deviceName,
+                                           ModbusProperties.DeviceConfig config,
+                                           ConnectionSupplier connectionSupplier) {
+        int maxRetries = 2; // 最多尝试2次
+        Exception lastException = null;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                PlcConnection connection = connectionSupplier.get();
+                String address = buildAddress(config);
+                String addressType = getAddressType(config.getFlagAddress());
+                boolean result = readFlagValue(connection, address, addressType, deviceName);
+
+                // 如果不是第一次尝试，说明重试成功
+                if (attempt > 1) {
+                    log.info("{} 重试成功 (第{}次尝试)", deviceName, attempt);
+                }
+
+                return result;
+            } catch (Exception e) {
+                lastException = e;
+
+                if (attempt < maxRetries) {
+                    log.warn("{} 读取失败 (第{}次尝试): {}，准备重试...",
+                            deviceName, attempt, e.getMessage());
+                    // 强制重新连接
+                    connectionManager.reconnect(deviceName);
+
+                    // 短暂延迟后重试
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                } else {
+                    log.error("{} 读取失败，已重试{}次", deviceName, maxRetries, e);
+                }
+            }
         }
+
+        return false;
+    }
+
+    /**
+     * 连接供应商函数式接口
+     */
+    @FunctionalInterface
+    private interface ConnectionSupplier {
+        PlcConnection get() throws Exception;
     }
 
     /**
      * 写入设备B的标志位
      */
     public boolean writeDeviceBFlag(boolean value) {
-        try {
-            PlcConnection connection = connectionManager.getDeviceBConnection();
-            String address = buildAddress(modbusProperties.getDeviceB());
-            String addressType = getAddressType(modbusProperties.getDeviceB().getFlagAddress());
-            return writeFlagValue(connection, address, addressType, value, "设备B");
-        } catch (Exception e) {
-            log.error("写入设备B标志位失败", e);
-            // 尝试重新连接
-            connectionManager.reconnect("deviceB");
-            return false;
+        return writeDeviceFlagWithRetry("deviceB", modbusProperties.getDeviceB(),
+                                        () -> connectionManager.getDeviceBConnection(), value);
+    }
+
+    /**
+     * 写入设备标志位，支持失败重试
+     */
+    private boolean writeDeviceFlagWithRetry(String deviceName,
+                                            ModbusProperties.DeviceConfig config,
+                                            ConnectionSupplier connectionSupplier,
+                                            boolean value) {
+        int maxRetries = 2; // 最多尝试2次
+        Exception lastException = null;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                PlcConnection connection = connectionSupplier.get();
+                String address = buildAddress(config);
+                String addressType = getAddressType(config.getFlagAddress());
+                boolean result = writeFlagValue(connection, address, addressType, value, deviceName);
+
+                // 如果不是第一次尝试，说明重试成功
+                if (attempt > 1) {
+                    log.info("{} 写入重试成功 (第{}次尝试)", deviceName, attempt);
+                }
+
+                return result;
+            } catch (Exception e) {
+                lastException = e;
+
+                if (attempt < maxRetries) {
+                    log.warn("{} 写入失败 (第{}次尝试): {}，准备重试...",
+                            deviceName, attempt, e.getMessage());
+                    // 强制重新连接
+                    connectionManager.reconnect(deviceName);
+
+                    // 短暂延迟后重试
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                } else {
+                    log.error("{} 写入失败，已重试{}次", deviceName, maxRetries, e);
+                }
+            }
         }
+
+        return false;
     }
 
     /**

@@ -58,16 +58,44 @@ public class ModbusConnectionManager {
         PlcConnection connection = connections.get(deviceName);
 
         // 检查连接是否存在且有效
-        if (connection != null && connection.isConnected()) {
-            return connection;
+        if (connection != null) {
+            try {
+                // 更严格的连接验证：不仅检查 isConnected()，还要确保连接可用
+                if (connection.isConnected()) {
+                    // 尝试获取连接元数据来验证连接真正可用
+                    // 如果内部线程池已终止，这里会抛出 RejectedExecutionException
+                    connection.getMetadata();
+                    return connection;
+                }
+            } catch (Exception e) {
+                // 连接已失效（例如线程池已终止），需要移除并重建
+                log.warn("检测到设备 {} 的连接已失效: {}", deviceName, e.getMessage());
+                connections.remove(deviceName);
+                // 尝试关闭失效的连接
+                try {
+                    connection.close();
+                } catch (Exception closeEx) {
+                    log.debug("关闭失效连接时出错: {}", deviceName, closeEx);
+                }
+                connection = null;
+            }
         }
 
         // 创建新连接
         synchronized (this) {
             // 双重检查
             connection = connections.get(deviceName);
-            if (connection != null && connection.isConnected()) {
-                return connection;
+            if (connection != null) {
+                try {
+                    if (connection.isConnected()) {
+                        connection.getMetadata();
+                        return connection;
+                    }
+                } catch (Exception e) {
+                    log.debug("双重检查时发现连接失效: {}", deviceName);
+                    connections.remove(deviceName);
+                    connection = null;
+                }
             }
 
             // 关闭旧连接（如果存在）
@@ -83,16 +111,26 @@ public class ModbusConnectionManager {
             String connectionString = config.getConnectionString();
             log.info("正在连接到设备 {}: {}", deviceName, connectionString);
 
-            connection = driverManager.getConnectionManager().getConnection(connectionString);
+            try {
+                connection = driverManager.getConnectionManager().getConnection(connectionString);
 
-            if (!connection.isConnected()) {
-                throw new RuntimeException("无法连接到设备: " + deviceName);
+                if (!connection.isConnected()) {
+                    throw new RuntimeException("连接创建成功但状态为未连接");
+                }
+
+                // 验证连接真正可用
+                connection.getMetadata();
+
+                connections.put(deviceName, connection);
+                log.info("成功连接到设备 {}", deviceName);
+
+                return connection;
+            } catch (Exception e) {
+                log.error("创建到设备 {} 的连接失败: {}", deviceName, e.getMessage());
+                // 确保失败的连接不会被缓存
+                connections.remove(deviceName);
+                throw new RuntimeException("无法连接到设备: " + deviceName + " - " + e.getMessage(), e);
             }
-
-            connections.put(deviceName, connection);
-            log.info("成功连接到设备 {}", deviceName);
-
-            return connection;
         }
     }
 
