@@ -61,6 +61,10 @@ public class MonitorService {
             if (!previousState && currentState) {
                 onStateChangedFrom0To1();
             }
+            // 检测状态变化：从1到0
+            else if (previousState && !currentState) {
+                onStateChangedFrom1To0();
+            }
 
             // 更新状态
             previousStateA.set(currentState);
@@ -87,6 +91,27 @@ public class MonitorService {
 
             if (success) {
                 log.info("成功将设备B标志位设置为 1");
+            } else {
+                log.error("设置设备B标志位失败");
+            }
+
+        } catch (Exception e) {
+            log.error("触发设备B时发生错误", e);
+        }
+    }
+
+    /**
+     * 当设备A标志位从1变成0时触发
+     * 将设备B的标志位设置为0
+     */
+    private void onStateChangedFrom1To0() {
+        log.warn("检测到设备A标志位从 1 变为 0，正在触发设备B...");
+
+        try {
+            boolean success = deviceService.writeDeviceBFlag(false);
+
+            if (success) {
+                log.info("成功将设备B标志位设置为 0");
             } else {
                 log.error("设置设备B标志位失败");
             }
