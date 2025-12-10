@@ -139,7 +139,6 @@ public class DeviceService {
      */
     private String buildAddress(ModbusProperties.DeviceConfig config) {
         String flagAddress = config.getFlagAddress();
-        int unitId = config.getUnitId();
 
         // 解析地址格式：coil:0 或 holding-register:0
         String[] parts = flagAddress.split(":");
@@ -151,14 +150,14 @@ public class DeviceService {
         String address = parts[1].trim();
 
         // 构建PLC4X Modbus地址
-        // PLC4X 格式：type:address:unitId
-        // 例如：coil:0:1 表示单元ID 1的线圈0
-        //      input-register:100:1 表示单元ID 1的输入寄存器100
+        // PLC4X 格式：type:address (单元ID在连接字符串中指定)
+        // 例如：coil:0 表示线圈0
+        //      input-register:10002 表示输入寄存器10002
         return switch (type.toLowerCase()) {
-            case "coil" -> String.format("coil:%s:%d", address, unitId);
-            case "discrete-input" -> String.format("discrete-input:%s:%d", address, unitId);
-            case "input-register" -> String.format("input-register:%s:%d", address, unitId);
-            case "holding-register" -> String.format("holding-register:%s:%d", address, unitId);
+            case "coil" -> String.format("coil:%s", address);
+            case "discrete-input" -> String.format("discrete-input:%s", address);
+            case "input-register" -> String.format("input-register:%s", address);
+            case "holding-register" -> String.format("holding-register:%s", address);
             default -> throw new IllegalArgumentException("不支持的地址类型: " + type);
         };
     }

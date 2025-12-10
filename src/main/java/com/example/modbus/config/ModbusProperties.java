@@ -42,9 +42,10 @@ public class ModbusProperties {
 
         /**
          * 生成Modbus连接字符串
+         * 格式：modbus-tcp://host:port?unit-id=1
          */
         public String getConnectionString() {
-            return String.format("modbus-tcp://%s:%d", host, port);
+            return String.format("modbus-tcp://%s:%d?unit-id=%d", host, port, unitId);
         }
     }
 
