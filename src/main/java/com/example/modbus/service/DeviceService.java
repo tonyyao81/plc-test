@@ -30,7 +30,8 @@ public class DeviceService {
         try {
             PlcConnection connection = connectionManager.getDeviceAConnection();
             String address = buildAddress(modbusProperties.getDeviceA());
-            return readBooleanValue(connection, address, "设备A");
+            String addressType = getAddressType(modbusProperties.getDeviceA().getFlagAddress());
+            return readFlagValue(connection, address, addressType, "设备A");
         } catch (Exception e) {
             log.error("读取设备A标志位失败", e);
             // 尝试重新连接
@@ -46,7 +47,8 @@ public class DeviceService {
         try {
             PlcConnection connection = connectionManager.getDeviceBConnection();
             String address = buildAddress(modbusProperties.getDeviceB());
-            return writeBooleanValue(connection, address, value, "设备B");
+            String addressType = getAddressType(modbusProperties.getDeviceB().getFlagAddress());
+            return writeFlagValue(connection, address, addressType, value, "设备B");
         } catch (Exception e) {
             log.error("写入设备B标志位失败", e);
             // 尝试重新连接
@@ -56,9 +58,9 @@ public class DeviceService {
     }
 
     /**
-     * 读取布尔值
+     * 读取标志位值（支持线圈和寄存器）
      */
-    private boolean readBooleanValue(PlcConnection connection, String address, String deviceName) throws Exception {
+    private boolean readFlagValue(PlcConnection connection, String address, String addressType, String deviceName) throws Exception {
         PlcReadRequest.Builder builder = connection.readRequestBuilder();
         PlcReadRequest readRequest = builder.addTagAddress("flag", address).build();
 
@@ -69,17 +71,38 @@ public class DeviceService {
             throw new RuntimeException(deviceName + "读取失败: " + response.getResponseCode("flag"));
         }
 
-        boolean value = response.getBoolean("flag");
-        log.debug("{}标志位读取成功: {}", deviceName, value);
+        boolean value;
+        // 根据地址类型选择读取方式
+        if (isRegisterType(addressType)) {
+            // 寄存器类型：读取整数值，非0为true
+            int intValue = response.getShort("flag");
+            value = intValue != 0;
+            log.debug("{}标志位读取成功: {} (寄存器值: {})", deviceName, value, intValue);
+        } else {
+            // 线圈/离散输入类型：直接读取布尔值
+            value = response.getBoolean("flag");
+            log.debug("{}标志位读取成功: {}", deviceName, value);
+        }
+
         return value;
     }
 
     /**
-     * 写入布尔值
+     * 写入标志位值（支持线圈和寄存器）
      */
-    private boolean writeBooleanValue(PlcConnection connection, String address, boolean value, String deviceName) throws Exception {
+    private boolean writeFlagValue(PlcConnection connection, String address, String addressType, boolean value, String deviceName) throws Exception {
         PlcWriteRequest.Builder builder = connection.writeRequestBuilder();
-        PlcWriteRequest writeRequest = builder.addTagAddress("flag", address, value).build();
+        PlcWriteRequest writeRequest;
+
+        // 根据地址类型选择写入方式
+        if (isRegisterType(addressType)) {
+            // 寄存器类型：写入整数值（0或1）
+            short intValue = (short) (value ? 1 : 0);
+            writeRequest = builder.addTagAddress("flag", address, intValue).build();
+        } else {
+            // 线圈类型：直接写入布尔值
+            writeRequest = builder.addTagAddress("flag", address, value).build();
+        }
 
         PlcWriteResponse response = writeRequest.execute().get();
 
@@ -90,6 +113,24 @@ public class DeviceService {
 
         log.info("{}标志位写入成功: {}", deviceName, value);
         return true;
+    }
+
+    /**
+     * 获取地址类型
+     */
+    private String getAddressType(String flagAddress) {
+        String[] parts = flagAddress.split(":");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("地址格式错误");
+        }
+        return parts[0].trim().toLowerCase();
+    }
+
+    /**
+     * 判断是否为寄存器类型
+     */
+    private boolean isRegisterType(String addressType) {
+        return "input-register".equals(addressType) || "holding-register".equals(addressType);
     }
 
     /**
